@@ -1,0 +1,11 @@
+{
+    "name": "azizoff/laravel-model-generator",
+    "type": "library",
+    "require": {
+        "illuminate/database": "^6.0"
+    },
+    "description": "Laravel Postgres based model generator",
+    "autoload": {
+        "Azizoff\\ModelGenerator\\": "src"
+    }
+}

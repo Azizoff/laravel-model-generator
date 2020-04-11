@@ -1,0 +1,18 @@
+<?php
+
+namespace DummyNamespace;
+
+use Illuminate\Database\Eloquent\Model;
+SoftDeletesImport
+DummyProperties
+class DummyClass extends Model
+{
+    SoftDeletesTrait
+    DummyTableName
+    DummyPrimary
+    DummyTimestamps
+    IncrementingKeyPart
+    PrimaryKeyTypePart
+    CastsPart
+
+}
