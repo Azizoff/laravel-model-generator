@@ -15,7 +15,7 @@ class ModelGeneratorProvider extends ServiceProvider
     public function register()
     {
         $this->app->singleton(
-            'command.azizov.model.generate',
+            'command.azizoff.model.generate',
             function ($app) {
                 return new ModelGenerateCommand($app['files']);
             }
@@ -23,7 +23,7 @@ class ModelGeneratorProvider extends ServiceProvider
 
         $this->commands(
             [
-                'command.azizov.model.generate',
+                'command.azizoff.model.generate',
             ]
         );
     }

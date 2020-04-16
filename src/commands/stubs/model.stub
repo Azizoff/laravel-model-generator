@@ -3,16 +3,15 @@
 namespace DummyNamespace;
 
 use Illuminate\Database\Eloquent\Model;
-SoftDeletesImport
-DummyProperties
+SoftDeletesImportPart
+PropertiesDocBlockPart
 class DummyClass extends Model
 {
-    SoftDeletesTrait
-    DummyTableName
-    DummyPrimary
-    DummyTimestamps
+    SoftDeletesTraitPart
+    TableNamePropertyPart
+    PrimaryPropertyPart
+    NoTimestampsPropertyPart
     IncrementingKeyPart
     PrimaryKeyTypePart
-    CastsPart
-
+    CastsPropertyPart
 }

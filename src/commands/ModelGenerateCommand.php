@@ -16,7 +16,7 @@ class ModelGenerateCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $description = 'Create a new Eloquent model class table based';
+    protected $description = 'Create a new Eloquent model class based on database table';
 
     /**
      * The type of class being generated.
@@ -44,26 +44,26 @@ class ModelGenerateCommand extends GeneratorCommand
     {
         $stub = str_replace(
             [
-                'DummyProperties',
-                'DummyPrimary',
-                'DummyTableName',
-                'DummyTimestamps',
-                'SoftDeletesImport',
-                'SoftDeletesTrait',
-                'CastsPart',
+                'PropertiesDocBlockPart',
+                'PrimaryPropertyPart',
+                'TableNamePropertyPart',
+                'NoTimestampsPropertyPart',
+                'SoftDeletesImportPart',
+                'SoftDeletesTraitPart',
+                'CastsPropertyPart',
                 'IncrementingKeyPart',
                 'PrimaryKeyTypePart',
             ],
             [
-                $this->buildPropertyDocBlock($this->getColumns()),
-                $this->buildPrimary($this->getPrimary()),
-                $this->buildTable($this->getTable()),
-                $this->buildTimestampsPart($this->getColumns()),
-                $this->softDeletesImportPart($this->getColumns()),
-                $this->softDeletesTraitPart($this->getColumns()),
-                $this->castsPart($this->getColumns()),
-                $this->incrementingKeyPart($this->getColumns()),
-                $this->primaryKeyTypePart($this->getColumns()),
+                $this->generatePropertyDocBlock($this->getColumns()),
+                $this->generatePrimaryPropertyPart($this->getPrimary()),
+                $this->generateTableNamePropertyPart($this->getTable()),
+                $this->generateNoTimestampsPropertyPart($this->getColumns()),
+                $this->generateSoftDeletesImportPart($this->getColumns()),
+                $this->generateSoftDeletesTraitPart($this->getColumns()),
+                $this->generateCastsPropertyPart($this->getColumns()),
+                $this->generateNoIncrementingKeyPropertyPart($this->getPrimary(), $this->getColumns()),
+                $this->generatePrimaryKeyTypeAttributePart($this->getPrimary(), $this->getColumns()),
 
             ],
             $stub
@@ -117,13 +117,12 @@ SQL;
         return $primary;
     }
 
-
     protected function buildClass($name)
     {
         return $this->cleanEmptyLines($this->replaceProperties(parent::buildClass($name)));
     }
 
-    private function buildPropertyDocBlock(array $properties)
+    private function generatePropertyDocBlock(array $columns)
     {
         return
             '/**'
@@ -141,7 +140,7 @@ SQL;
                             ]
                         );
                     },
-                    $properties
+                    $columns
                 )
             )
             . PHP_EOL
@@ -175,7 +174,7 @@ SQL;
         ];
     }
 
-    private function buildPrimary(array $primary): string
+    private function generatePrimaryPropertyPart(array $primary): string
     {
         if (count($primary) === 1) {
             return sprintf('protected $primaryKey = \'%s\';', $primary[0]->column_name);
@@ -183,12 +182,12 @@ SQL;
         return 'protected $primaryKey = \'\'; // Unknown key';
     }
 
-    private function buildTable(string $table): string
+    private function generateTableNamePropertyPart(string $table): string
     {
         return sprintf('protected $table = \'%s\';', $table);
     }
 
-    private function buildTimestampsPart(array $columns)
+    private function generateNoTimestampsPropertyPart(array $columns)
     {
         $names = array_map(
             static function ($item) {
@@ -221,20 +220,20 @@ SQL;
         return 1 === count($date_columns);
     }
 
-    private function softDeletesImportPart(array $columns): string
+    private function generateSoftDeletesImportPart(array $columns): string
     {
         return
-            $this->isSoftDeletes($this->getColumns())
+            $this->isSoftDeletes($columns)
                 ? 'use Illuminate\Database\Eloquent\SoftDeletes;' . PHP_EOL
                 : '';
     }
 
-    private function softDeletesTraitPart(array $columns): string
+    private function generateSoftDeletesTraitPart(array $columns): string
     {
-        return $this->isSoftDeletes($this->getColumns()) ? 'use SoftDeletes;' : '';
+        return $this->isSoftDeletes($columns) ? 'use SoftDeletes;' : '';
     }
 
-    private function castsPart(array $columns)
+    private function generateCastsPropertyPart(array $columns)
     {
         $toArrayCasts = array_filter(
             $columns,
@@ -258,9 +257,8 @@ SQL;
         return '';
     }
 
-    private function incrementingKeyPart(array $columns): string
+    private function generateNoIncrementingKeyPropertyPart(array $primary, array $columns): string
     {
-        $primary = $this->getPrimary();
         if (1 === count($primary)) {
             $key = array_filter(
                 $columns,
@@ -276,9 +274,8 @@ SQL;
         return '';
     }
 
-    private function primaryKeyTypePart(array $columns)
+    private function generatePrimaryKeyTypeAttributePart(array $primary, array $columns)
     {
-        $primary = $this->getPrimary();
         if (1 === count($primary)) {
             $key = array_filter(
                 $columns,

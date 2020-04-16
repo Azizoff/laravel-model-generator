@@ -1,11 +1,19 @@
 {
     "name": "azizoff/laravel-model-generator",
     "type": "library",
+    "authors": [
+        {
+            "name": "Ildar Azizov",
+            "email": "azizovreg@gmail.com"
+        }
+    ],
     "require": {
-        "illuminate/database": "^6.0"
+        "illuminate/database": "^6.0",
+        "illuminate/console": "^6.0"
     },
-    "description": "Laravel Postgres based model generator",
+    "description": "Laravel database based Laravel model generator",
     "autoload": {
         "Azizoff\\ModelGenerator\\": "src"
-    }
+    },
+    "minimum-stability": "dev"
 }
