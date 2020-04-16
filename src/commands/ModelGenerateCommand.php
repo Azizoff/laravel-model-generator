@@ -33,12 +33,6 @@ class ModelGenerateCommand extends GeneratorCommand
         return __DIR__ . '/stubs/model.stub';
     }
 
-    protected function getOptions()
-    {
-        return [
-            ['force', null, InputOption::VALUE_NONE, 'Create the class even if the model already exists'],
-        ];
-    }
 
     private function replaceProperties($stub)
     {
@@ -295,11 +289,14 @@ SQL;
 
     private function cleanEmptyLines(string $stub)
     {
-        return preg_replace('#^    \n#m', '', $stub);
+        return preg_replace('#^\n\n#m', PHP_EOL, preg_replace('#^    \n#m', '', $stub));
     }
 
     protected function getNameInput()
     {
+        if ($this->hasOption('model') && !empty($this->option('model'))) {
+            return $this->option('model');
+        }
         return Str::ucfirst(Str::camel($this->getTable()));
     }
 
@@ -309,4 +306,13 @@ SQL;
             ['table', InputArgument::REQUIRED, 'The name of the table'],
         ];
     }
+
+    protected function getOptions()
+    {
+        return [
+            ['force', null, InputOption::VALUE_NONE, 'Create the class even if the model already exists'],
+            ['model', null, InputOption::VALUE_REQUIRED, 'Model class name'],
+        ];
+    }
+
 }
