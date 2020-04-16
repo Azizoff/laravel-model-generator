@@ -7,9 +7,9 @@ Insert Azizoff\ModelGenerator\ModelGeneratorProvider::class into "providers" sec
 
 or paste into `AppServiceProvider::register()`
 ```php
-if ($this->app()->environment() === 'local'
-        && class_exists(Azizoff\ModelGenerator\ModelGeneratorProvider::class)
+if ($this->app->environment() === 'local'
+        && class_exists(\Azizoff\ModelGenerator\ModelGeneratorProvider::class)
 ) {
-        $this->app->register(Azizoff\ModelGenerator\ModelGeneratorProvider::class);
+        $this->app->register(\Azizoff\ModelGenerator\ModelGeneratorProvider::class);
 }
 ```
