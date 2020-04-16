@@ -13,7 +13,10 @@
     },
     "description": "Laravel database based Laravel model generator",
     "autoload": {
-        "\\Azizoff\\ModelGenerator\\": "src"
+        "psr-4": {
+            "Azizoff\\ModelGenerator\\": "src/"
+        }
+
     },
     "minimum-stability": "dev"
 }
