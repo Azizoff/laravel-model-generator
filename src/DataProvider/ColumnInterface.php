@@ -13,4 +13,6 @@ interface ColumnInterface
     public function getDefaultValue();
 
     public function getPHPType(): string;
+
+    public function isIncremental(): bool;
 }

@@ -7,14 +7,8 @@ interface DataProviderInterface
     /**
      * @param string $table
      *
-     * @return ColumnInterface[]
+     * @return TableInterface
      */
-    public function getColumns(string $table): array;
+    public function getTable(string $table): TableInterface;
 
-    /**
-     * @param string $table
-     *
-     * @return PrimaryInterface[]
-     */
-    public function getPrimary(string $table): array;
 }

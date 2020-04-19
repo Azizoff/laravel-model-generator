@@ -53,4 +53,9 @@ class Column implements ColumnInterface
 
         return $map[$type] ?? 'string';
     }
+
+    public function isIncremental(): bool
+    {
+        return mb_stripos($this->getDefaultValue(), 'nextval') === false;
+    }
 }

@@ -5,7 +5,7 @@ namespace Azizoff\ModelGenerator\Commands;
 use Azizoff\ModelGenerator\DataProvider\ColumnInterface;
 use Azizoff\ModelGenerator\DataProvider\DataProviderFactory;
 use Azizoff\ModelGenerator\DataProvider\DataProviderInterface;
-use Azizoff\ModelGenerator\DataProvider\PrimaryInterface;
+use Azizoff\ModelGenerator\DataProvider\TableInterface;
 use Exception;
 use Illuminate\Config\Repository;
 use Illuminate\Console\GeneratorCommand;
@@ -74,8 +74,8 @@ class ModelGenerateCommand extends GeneratorCommand
      */
     private function replaceProperties(string $stub): string
     {
-        $primary = $this->getPrimary();
-        $columns = $this->getColumns();
+        $tableName = $this->getTableName();
+        $table = $this->dataProvider->getTable($tableName);
 
         $stub = str_replace(
             [
@@ -90,15 +90,15 @@ class ModelGenerateCommand extends GeneratorCommand
                 'PrimaryKeyTypePart',
             ],
             [
-                $this->generatePropertyDocBlock($columns),
-                $this->generatePrimaryPropertyPart($primary),
-                $this->generateTableNamePropertyPart($this->getTableName()),
-                $this->generateNoTimestampsPropertyPart($columns),
-                $this->generateSoftDeletesImportPart($columns),
-                $this->generateSoftDeletesTraitPart($columns),
-                $this->generateCastsPropertyPart($columns),
-                $this->generateNoIncrementingKeyPropertyPart($primary, $columns),
-                $this->generatePrimaryKeyTypeAttributePart($primary, $columns),
+                $this->generatePropertyDocBlock($table),
+                $this->generatePrimaryPropertyPart($table),
+                $this->generateTableNamePropertyPart($table),
+                $this->generateNoTimestampsPropertyPart($table),
+                $this->generateSoftDeletesImportPart($table),
+                $this->generateSoftDeletesTraitPart($table),
+                $this->generateCastsPropertyPart($table),
+                $this->generateNoIncrementingKeyPropertyPart($table),
+                $this->generatePrimaryKeyTypeAttributePart($table),
 
             ],
             $stub
@@ -107,33 +107,6 @@ class ModelGenerateCommand extends GeneratorCommand
         return $stub;
     }
 
-    /**
-     * @return ColumnInterface[]
-     */
-    private function getColumns()
-    {
-        static $columns;
-
-        if (null === $columns) {
-            $columns = $this->dataProvider->getColumns($this->getTableName());
-        }
-
-        return $columns;
-    }
-
-    /**
-     * @return PrimaryInterface[]
-     */
-    private function getPrimary()
-    {
-        static $primary;
-
-        if (null === $primary) {
-            $primary = $this->dataProvider->getPrimary($this->getTableName());
-        }
-
-        return $primary;
-    }
 
     protected function buildClass($name)
     {
@@ -141,11 +114,11 @@ class ModelGenerateCommand extends GeneratorCommand
     }
 
     /**
-     * @param ColumnInterface[] $columns
+     * @param TableInterface $table
      *
      * @return string
      */
-    private function generatePropertyDocBlock(array $columns): string
+    private function generatePropertyDocBlock(TableInterface $table): string
     {
         return
             '/**'
@@ -163,7 +136,7 @@ class ModelGenerateCommand extends GeneratorCommand
                             ]
                         );
                     },
-                    $columns
+                    $table->getColumns()
                 )
             )
             . PHP_EOL
@@ -171,35 +144,35 @@ class ModelGenerateCommand extends GeneratorCommand
     }
 
     /**
-     * @param PrimaryInterface[] $primary
+     * @param TableInterface $table
      *
      * @return string
      */
-    private function generatePrimaryPropertyPart(array $primary): string
+    private function generatePrimaryPropertyPart(TableInterface $table): string
     {
-        if (count($primary) === 1) {
-            return sprintf('protected $primaryKey = \'%s\';', $primary[0]->getColumnName());
+        if (count($table->getPrimary()) === 1) {
+            return sprintf('protected $primaryKey = \'%s\';', $table->getPrimary()[0]->getName());
         }
         return 'protected $primaryKey = \'\'; // Unknown key';
     }
 
-    private function generateTableNamePropertyPart(string $table): string
+    private function generateTableNamePropertyPart(TableInterface $table): string
     {
-        return sprintf('protected $table = \'%s\';', $table);
+        return sprintf('protected $table = \'%s\';', $table->getName());
     }
 
     /**
-     * @param ColumnInterface[] $columns
+     * @param TableInterface $table
      *
      * @return string
      */
-    private function generateNoTimestampsPropertyPart(array $columns): string
+    private function generateNoTimestampsPropertyPart(TableInterface $table): string
     {
         $names = array_map(
             static function ($column) {
                 return $column->getName();
             },
-            $columns
+            $table->getColumns()
         );
         $date_columns = array_intersect(['created_at', 'updated_at'], $names);
         return (count($date_columns) !== 2) ? 'protected $timestamps = false;' : '';
@@ -231,37 +204,37 @@ class ModelGenerateCommand extends GeneratorCommand
     }
 
     /**
-     * @param ColumnInterface[] $columns
+     * @param TableInterface $table
      *
      * @return string
      */
-    private function generateSoftDeletesImportPart(array $columns): string
+    private function generateSoftDeletesImportPart(TableInterface $table): string
     {
         return
-            $this->isSoftDeletes($columns)
+            $this->isSoftDeletes($table->getColumns())
                 ? 'use Illuminate\Database\Eloquent\SoftDeletes;' . PHP_EOL
                 : '';
     }
 
     /**
-     * @param ColumnInterface[] $columns
+     * @param TableInterface $table
      *
      * @return string
      */
-    private function generateSoftDeletesTraitPart(array $columns): string
+    private function generateSoftDeletesTraitPart(TableInterface $table): string
     {
-        return $this->isSoftDeletes($columns) ? 'use SoftDeletes;' : '';
+        return $this->isSoftDeletes($table->getColumns()) ? 'use SoftDeletes;' : '';
     }
 
     /**
-     * @param ColumnInterface[] $columns
+     * @param TableInterface $table
      *
      * @return string
      */
-    private function generateCastsPropertyPart(array $columns): string
+    private function generateCastsPropertyPart(TableInterface $table): string
     {
         $toArrayCasts = array_filter(
-            $columns,
+            $table->getColumns(),
             static function ($column) {
                 return in_array($column->getType(), ['json', 'jsonb'], true);
             }
@@ -283,24 +256,17 @@ class ModelGenerateCommand extends GeneratorCommand
     }
 
     /**
-     * @param PrimaryInterface[] $primary
-     * @param ColumnInterface[] $columns
+     * @param TableInterface $table
      *
      * @return string
      */
-    private function generateNoIncrementingKeyPropertyPart(array $primary, array $columns): string
+    private function generateNoIncrementingKeyPropertyPart(TableInterface $table): string
     {
-        if (1 === count($primary)) {
-            $key = array_filter(
-                $columns,
-                static function ($column) use ($primary) {
-                    return $column->getName() === $primary[0]->getColumnName();
-                }
-            );
-            if (1 === count($key)) {
-                if (mb_stripos($key[0]->getDefaultValue(), 'nextval') === false) {
-                    return 'public $incrementing = false;';
-                }
+        if (1 === count($table->getPrimary())) {
+            $key = $table->getPrimary()[0];
+
+            if (!$key->isIncremental()) {
+                return 'public $incrementing = false;';
             }
         }
 
@@ -308,26 +274,17 @@ class ModelGenerateCommand extends GeneratorCommand
     }
 
     /**
-     * @param PrimaryInterface[] $primary
-     * @param ColumnInterface[] $columns
+     * @param TableInterface $table
      *
      * @return string
      */
-    private function generatePrimaryKeyTypeAttributePart(array $primary, array $columns): string
+    private function generatePrimaryKeyTypeAttributePart(TableInterface $table): string
     {
-        if (1 === count($primary)) {
-            $key = array_filter(
-                $columns,
-                static function ($column) use ($primary) {
-                    return $column->getName() === $primary[0]->getColumnName();
-                }
-            );
-
-            if (1 === count($key)) {
-                $type = $key[0]->getPHPType();
-                if (in_array($type, ['string'], true)) {
-                    return 'protected $keyType = \'' . $type . '\';';
-                }
+        if (1 === count($table->getPrimary())) {
+            $key = $table->getPrimary()[0];
+            $type = $key->getPHPType();
+            if (in_array($type, ['string'], true)) {
+                return 'protected $keyType = \'' . $type . '\';';
             }
         }
 
