@@ -2,10 +2,14 @@
 
 namespace Azizoff\ModelGenerator\Commands;
 
+use Azizoff\ModelGenerator\DataProvider\DataProviderFactory;
+use Azizoff\ModelGenerator\DataProvider\DataProviderInterface;
+use Exception;
 use Illuminate\Config\Repository;
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Database\Connection;
+use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
@@ -30,12 +34,27 @@ class ModelGenerateCommand extends GeneratorCommand
      * @var string
      */
     private $defaultNamespace;
+    /**
+     * @var DataProviderInterface
+     */
+    private $dataProvider;
 
-
-    public function __construct(Filesystem $files, Repository $config)
+    /**
+     * ModelGenerateCommand constructor.
+     *
+     * @param ConnectionResolverInterface $db
+     * @param Filesystem $files
+     * @param Repository $config
+     *
+     * @throws Exception
+     */
+    public function __construct(ConnectionResolverInterface $db, Filesystem $files, Repository $config)
     {
         parent::__construct($files);
         $this->defaultNamespace = $config->get('model-generator.default_namespace');
+        /** @var Connection $connection */
+        $connection = $db->connection($config->get('model-generator.connection'));
+        $this->dataProvider = DataProviderFactory::make($connection);
     }
 
     /**
@@ -46,9 +65,11 @@ class ModelGenerateCommand extends GeneratorCommand
         return __DIR__ . '/stubs/model.stub';
     }
 
-
     private function replaceProperties($stub): string
     {
+        $primary = $this->getPrimary();
+        $columns = $this->getColumns();
+
         $stub = str_replace(
             [
                 'PropertiesDocBlockPart',
@@ -62,15 +83,15 @@ class ModelGenerateCommand extends GeneratorCommand
                 'PrimaryKeyTypePart',
             ],
             [
-                $this->generatePropertyDocBlock($this->getColumns()),
-                $this->generatePrimaryPropertyPart($this->getPrimary()),
-                $this->generateTableNamePropertyPart($this->getTable()),
-                $this->generateNoTimestampsPropertyPart($this->getColumns()),
-                $this->generateSoftDeletesImportPart($this->getColumns()),
-                $this->generateSoftDeletesTraitPart($this->getColumns()),
-                $this->generateCastsPropertyPart($this->getColumns()),
-                $this->generateNoIncrementingKeyPropertyPart($this->getPrimary(), $this->getColumns()),
-                $this->generatePrimaryKeyTypeAttributePart($this->getPrimary(), $this->getColumns()),
+                $this->generatePropertyDocBlock($columns),
+                $this->generatePrimaryPropertyPart($primary),
+                $this->generateTableNamePropertyPart($this->getTableName()),
+                $this->generateNoTimestampsPropertyPart($columns),
+                $this->generateSoftDeletesImportPart($columns),
+                $this->generateSoftDeletesTraitPart($columns),
+                $this->generateCastsPropertyPart($columns),
+                $this->generateNoIncrementingKeyPropertyPart($primary, $columns),
+                $this->generatePrimaryKeyTypeAttributePart($primary, $columns),
 
             ],
             $stub
@@ -84,42 +105,20 @@ class ModelGenerateCommand extends GeneratorCommand
         static $columns;
 
         if (null === $columns) {
-            $query = <<<'SQL'
-SELECT ordinal_position,
-       column_name,
-       is_nullable,
-       data_type,
-       udt_name,
-       character_maximum_length,
-       numeric_precision,
-       numeric_precision_radix,
-       numeric_scale,
-       column_default
-FROM information_schema.columns
-WHERE table_name = :table_name
-ORDER BY ordinal_position
-SQL;
-            $columns = DB::select($query, ['table_name' => $this->getTable()]);
+            $columns = $this->dataProvider->getColumns($this->getTableName());
         }
+
         return $columns;
     }
 
     private function getPrimary()
     {
         static $primary;
+
         if (null === $primary) {
-            $query = <<<'SQL'
-SELECT kcu.column_name
-FROM information_schema.table_constraints tco
-         INNER JOIN information_schema.key_column_usage kcu
-                    ON kcu.constraint_name = tco.constraint_name
-                        AND kcu.constraint_schema = tco.constraint_schema
-                        AND kcu.constraint_name = tco.constraint_name
-WHERE tco.table_name = :table_name
-  AND tco.constraint_type = 'PRIMARY KEY'
-SQL;
-            $primary = DB::select($query, ['table_name' => $this->getTable()]);
+            $primary = $this->dataProvider->getPrimary($this->getTableName());
         }
+
         return $primary;
     }
 
@@ -208,7 +207,7 @@ SQL;
     /**
      * @return string
      */
-    private function getTable(): string
+    private function getTableName(): string
     {
         return trim($this->argument('table'));
     }
@@ -309,7 +308,7 @@ SQL;
         if ($this->hasOption('model') && !empty($this->option('model'))) {
             return $this->option('model');
         }
-        return Str::ucfirst(Str::camel($this->getTable()));
+        return Str::ucfirst(Str::camel($this->getTableName()));
     }
 
     protected function getDefaultNamespace($rootNamespace)
@@ -331,5 +330,4 @@ SQL;
             ['model', null, InputOption::VALUE_REQUIRED, 'Model class name'],
         ];
     }
-
 }

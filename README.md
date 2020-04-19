@@ -1,8 +1,10 @@
-# About
+# Laravel model generator
+
+## About
 Creates a new model class based on a database table  
 !!! It works only with postgresql database.
 
-# Installation
+## Installation
 Insert Azizoff\ModelGenerator\ModelGeneratorProvider::class into "providers" section of /config/app.php
 
 or paste into `AppServiceProvider::register()`
@@ -13,3 +15,20 @@ if ($this->app->environment() === 'local'
         $this->app->register(\Azizoff\ModelGenerator\ModelGeneratorProvider::class);
 }
 ```
+
+## Config
+You can also publish the config file
+```bash
+php artisan vendor:publish --provider="Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider" --tag=config
+```
+
+## Command
+```bash
+php artisan model:generate <tablename>
+```
+
+```bash
+php artisan model:generate <tablename> --model=\\Http\\Models\\CustomModelName
+```
+
+

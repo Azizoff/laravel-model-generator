@@ -21,6 +21,7 @@ class ModelGeneratorProvider extends ServiceProvider
             'command.azizoff.model.generate',
             function ($app) {
                 return new ModelGenerateCommand(
+                    $app['db'],
                     $app['files'],
                     $app['config']
                 );
