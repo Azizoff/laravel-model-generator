@@ -9,8 +9,8 @@
     ],
     "require": {
         "php": ">= 7.0",
-        "illuminate/database": ">= 5.0 < 7.0",
-        "illuminate/console": ">= 5.0 < 7.0"
+        "illuminate/database": ">= 5.5 < 7.0",
+        "illuminate/console": ">= 5.5 < 7.0"
     },
     "description": "Laravel database based Laravel model generator",
     "autoload": {
