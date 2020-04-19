@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'default_namespace' => '', // '\\Models\\Http',
+    'default_namespace' => '\\Http\\Models',
 ];

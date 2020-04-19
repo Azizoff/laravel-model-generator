@@ -35,7 +35,7 @@ class ModelGenerateCommand extends GeneratorCommand
     public function __construct(Filesystem $files, Repository $config)
     {
         parent::__construct($files);
-        $this->defaultNamespace = $config->get('model-generator.default_namespace', '\\Http\\Models');
+        $this->defaultNamespace = $config->get('model-generator.default_namespace');
     }
 
     /**
