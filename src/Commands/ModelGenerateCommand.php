@@ -336,7 +336,15 @@ class ModelGenerateCommand extends GeneratorCommand
 
     private function cleanEmptyLines(string $stub): string
     {
-        return preg_replace('#^\n\n#m', PHP_EOL, preg_replace('#^ {4}\n#m', '', $stub));
+        return preg_replace(
+            '#^{\n\n#m',
+            "{\n",
+            preg_replace(
+                '#^\n\n#m',
+                PHP_EOL,
+                preg_replace('#^ {4}\n#m', '', $stub)
+            )
+        );
     }
 
     protected function getNameInput(): string
