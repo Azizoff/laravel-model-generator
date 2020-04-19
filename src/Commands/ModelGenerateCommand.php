@@ -1,6 +1,6 @@
 <?php
 
-namespace Azizoff\ModelGenerator\commands;
+namespace Azizoff\ModelGenerator\Commands;
 
 use Illuminate\Config\Repository;
 use Illuminate\Console\GeneratorCommand;

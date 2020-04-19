@@ -2,7 +2,7 @@
 
 namespace Azizoff\ModelGenerator;
 
-use Azizoff\ModelGenerator\commands\ModelGenerateCommand;
+use Azizoff\ModelGenerator\Commands\ModelGenerateCommand;
 use Illuminate\Support\ServiceProvider;
 
 class ModelGeneratorProvider extends ServiceProvider
