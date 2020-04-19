@@ -18,8 +18,8 @@ class DataProvider implements DataProviderInterface
         $this->connection = $connection;
     }
 
-    public function getTable($tableName): TableInterface
+    public function getTable(string $table): TableInterface
     {
-        return new Table($tableName, $this->connection);
+        return new Table($table, $this->connection);
     }
 }
