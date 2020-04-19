@@ -14,10 +14,16 @@ class ModelGeneratorProvider extends ServiceProvider
      */
     public function register()
     {
+        $configPath = __DIR__ . '/../config/model-generator.php';
+        $this->mergeConfigFrom($configPath, 'model-generator');
+
         $this->app->singleton(
             'command.azizoff.model.generate',
             function ($app) {
-                return new ModelGenerateCommand($app['files']);
+                return new ModelGenerateCommand(
+                    $app['files'],
+                    $app['config']
+                );
             }
         );
 
@@ -35,6 +41,12 @@ class ModelGeneratorProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        $configPath = __DIR__ . '/../config/model-generator.php';
+        if (function_exists('config_path')) {
+            $publishPath = config_path('model-generator.php');
+        } else {
+            $publishPath = base_path('config/model-generator.php');
+        }
+        $this->publishes([$configPath => $publishPath], 'config');
     }
 }

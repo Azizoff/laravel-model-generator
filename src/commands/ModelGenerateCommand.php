@@ -2,7 +2,9 @@
 
 namespace Azizoff\ModelGenerator\commands;
 
+use Illuminate\Config\Repository;
 use Illuminate\Console\GeneratorCommand;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\Console\Input\InputArgument;
@@ -24,6 +26,17 @@ class ModelGenerateCommand extends GeneratorCommand
      * @var string
      */
     protected $type = 'Model';
+    /**
+     * @var string
+     */
+    private $defaultNamespace;
+
+
+    public function __construct(Filesystem $files, Repository $config)
+    {
+        parent::__construct($files);
+        $this->defaultNamespace = $config->get('model-generator.default_namespace', '\\Http\\Models');
+    }
 
     /**
      * @inheritDoc
@@ -297,6 +310,11 @@ SQL;
             return $this->option('model');
         }
         return Str::ucfirst(Str::camel($this->getTable()));
+    }
+
+    protected function getDefaultNamespace($rootNamespace)
+    {
+        return $rootNamespace . $this->defaultNamespace;
     }
 
     protected function getArguments(): array
