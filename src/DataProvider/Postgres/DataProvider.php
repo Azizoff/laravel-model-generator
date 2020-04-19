@@ -2,6 +2,7 @@
 
 namespace Azizoff\ModelGenerator\DataProvider\Postgres;
 
+use Azizoff\ModelGenerator\DataProvider\ColumnInterface;
 use Azizoff\ModelGenerator\DataProvider\DataProviderInterface;
 use Illuminate\Database\Connection;
 
@@ -17,7 +18,12 @@ class DataProvider implements DataProviderInterface
         $this->connection = $connection;
     }
 
-    public function getColumns(string $table)
+    /**
+     * @param string $table
+     *
+     * @return array|ColumnInterface[]
+     */
+    public function getColumns(string $table): array
     {
         $query = <<<'SQL'
 SELECT
@@ -37,7 +43,12 @@ WHERE
     table_name = :table_name
 ORDER BY ordinal_position
 SQL;
-        return $this->connection->select($query, ['table_name' => $table]);
+        return array_map(
+            static function ($column) {
+                return new Column($column);
+            },
+            $this->connection->select($query, ['table_name' => $table])
+        );
     }
 
     public function getPrimary(string $table)

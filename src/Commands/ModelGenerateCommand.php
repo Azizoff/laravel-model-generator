@@ -2,6 +2,7 @@
 
 namespace Azizoff\ModelGenerator\Commands;
 
+use Azizoff\ModelGenerator\DataProvider\ColumnInterface;
 use Azizoff\ModelGenerator\DataProvider\DataProviderFactory;
 use Azizoff\ModelGenerator\DataProvider\DataProviderInterface;
 use Exception;
@@ -65,7 +66,12 @@ class ModelGenerateCommand extends GeneratorCommand
         return __DIR__ . '/stubs/model.stub';
     }
 
-    private function replaceProperties($stub): string
+    /**
+     * @param string $stub
+     *
+     * @return string
+     */
+    private function replaceProperties(string $stub): string
     {
         $primary = $this->getPrimary();
         $columns = $this->getColumns();
@@ -100,6 +106,9 @@ class ModelGenerateCommand extends GeneratorCommand
         return $stub;
     }
 
+    /**
+     * @return ColumnInterface[]
+     */
     private function getColumns()
     {
         static $columns;
@@ -127,6 +136,11 @@ class ModelGenerateCommand extends GeneratorCommand
         return $this->cleanEmptyLines($this->replaceProperties(parent::buildClass($name)));
     }
 
+    /**
+     * @param ColumnInterface[] $columns
+     *
+     * @return string
+     */
     private function generatePropertyDocBlock(array $columns): string
     {
         return
@@ -139,9 +153,9 @@ class ModelGenerateCommand extends GeneratorCommand
                         return vsprintf(
                             " * @property %s%s $%s",
                             [
-                                $this->normalizeType($property->data_type),
-                                $property->is_nullable === 'YES' ? '|null' : '',
-                                $property->column_name,
+                                $this->normalizeType($property->getType()),
+                                $property->isNullable() ? '|null' : '',
+                                $property->getName(),
                             ]
                         );
                     },
@@ -192,11 +206,16 @@ class ModelGenerateCommand extends GeneratorCommand
         return sprintf('protected $table = \'%s\';', $table);
     }
 
+    /**
+     * @param ColumnInterface[] $columns
+     *
+     * @return string
+     */
     private function generateNoTimestampsPropertyPart(array $columns): string
     {
         $names = array_map(
-            static function ($item) {
-                return $item->column_name;
+            static function ($column) {
+                return $column->getName();
             },
             $columns
         );
@@ -212,12 +231,16 @@ class ModelGenerateCommand extends GeneratorCommand
         return trim($this->argument('table'));
     }
 
-
+    /**
+     * @param ColumnInterface[] $columns
+     *
+     * @return bool
+     */
     private function isSoftDeletes(array $columns): bool
     {
         $names = array_map(
-            static function ($item) {
-                return $item->column_name;
+            static function ($column) {
+                return $column->getName();
             },
             $columns
         );
@@ -225,6 +248,11 @@ class ModelGenerateCommand extends GeneratorCommand
         return 1 === count($date_columns);
     }
 
+    /**
+     * @param ColumnInterface[] $columns
+     *
+     * @return string
+     */
     private function generateSoftDeletesImportPart(array $columns): string
     {
         return
@@ -233,24 +261,34 @@ class ModelGenerateCommand extends GeneratorCommand
                 : '';
     }
 
+    /**
+     * @param ColumnInterface[] $columns
+     *
+     * @return string
+     */
     private function generateSoftDeletesTraitPart(array $columns): string
     {
         return $this->isSoftDeletes($columns) ? 'use SoftDeletes;' : '';
     }
 
+    /**
+     * @param ColumnInterface[] $columns
+     *
+     * @return string
+     */
     private function generateCastsPropertyPart(array $columns): string
     {
         $toArrayCasts = array_filter(
             $columns,
-            static function ($item) {
-                return in_array($item->data_type, ['json', 'jsonb'], true);
+            static function ($column) {
+                return in_array($column->getType(), ['json', 'jsonb'], true);
             }
         );
 
         $casts = [];
 
-        foreach ($toArrayCasts as $item) {
-            $casts[] = str_repeat(' ', 8) . sprintf("'%s' => 'json',", $item->column_name);
+        foreach ($toArrayCasts as $column) {
+            $casts[] = str_repeat(' ', 8) . sprintf("'%s' => 'json',", $column->getName());
         }
 
         if (count($casts) > 0) {
@@ -262,36 +300,52 @@ class ModelGenerateCommand extends GeneratorCommand
         return '';
     }
 
+    /**
+     * @param array $primary
+     * @param ColumnInterface[] $columns
+     *
+     * @return string
+     */
     private function generateNoIncrementingKeyPropertyPart(array $primary, array $columns): string
     {
         if (1 === count($primary)) {
             $key = array_filter(
                 $columns,
-                static function ($item) use ($primary) {
-                    return $item->column_name === $primary[0]->column_name;
+                static function ($column) use ($primary) {
+                    return $column->getName() === $primary[0]->column_name;
                 }
             );
-            if (mb_stripos($key[0]->column_default, 'nextval') === false) {
-                return 'public $incrementing = false;';
+            if (1 === count($key)) {
+                if (mb_stripos($key[0]->getDefaultValue(), 'nextval') === false) {
+                    return 'public $incrementing = false;';
+                }
             }
         }
 
         return '';
     }
 
+    /**
+     * @param array $primary
+     * @param ColumnInterface[] $columns
+     *
+     * @return string
+     */
     private function generatePrimaryKeyTypeAttributePart(array $primary, array $columns): string
     {
         if (1 === count($primary)) {
             $key = array_filter(
                 $columns,
-                static function ($item) use ($primary) {
-                    return $item->column_name === $primary[0]->column_name;
+                static function ($column) use ($primary) {
+                    return $column->getName() === $primary[0]->column_name;
                 }
             );
 
-            $type = $this->normalizeType($key[0]->data_type);
-            if (in_array($type, ['string'], true)) {
-                return 'protected $keyType = \'' . $type . '\';';
+            if (1 === count($key)) {
+                $type = $this->normalizeType($key[0]->getType());
+                if (in_array($type, ['string'], true)) {
+                    return 'protected $keyType = \'' . $type . '\';';
+                }
             }
         }
 
