@@ -5,6 +5,7 @@ namespace Azizoff\ModelGenerator\Commands;
 use Azizoff\ModelGenerator\DataProvider\ColumnInterface;
 use Azizoff\ModelGenerator\DataProvider\DataProviderFactory;
 use Azizoff\ModelGenerator\DataProvider\DataProviderInterface;
+use Azizoff\ModelGenerator\DataProvider\PrimaryInterface;
 use Exception;
 use Illuminate\Config\Repository;
 use Illuminate\Console\GeneratorCommand;
@@ -120,6 +121,9 @@ class ModelGenerateCommand extends GeneratorCommand
         return $columns;
     }
 
+    /**
+     * @return PrimaryInterface[]
+     */
     private function getPrimary()
     {
         static $primary;
@@ -149,13 +153,13 @@ class ModelGenerateCommand extends GeneratorCommand
             . implode(
                 PHP_EOL,
                 array_map(
-                    function ($property) {
+                    function ($column) {
                         return vsprintf(
                             " * @property %s%s $%s",
                             [
-                                $this->normalizeType($property->getType()),
-                                $property->isNullable() ? '|null' : '',
-                                $property->getName(),
+                                $column->getPHPType(),
+                                $column->isNullable() ? '|null' : '',
+                                $column->getName(),
                             ]
                         );
                     },
@@ -166,37 +170,15 @@ class ModelGenerateCommand extends GeneratorCommand
             . ' */';
     }
 
-    private function normalizeType($data_type): string
-    {
-        $map = $this->getTypes();
-
-        return $map[$data_type] ?? 'string';
-    }
-
     /**
-     * @return array
+     * @param PrimaryInterface[] $primary
+     *
+     * @return string
      */
-    private function getTypes(): array
-    {
-        return [
-            'bigint'                      => 'int',
-            'boolean'                     => 'bool',
-            'character varying'           => 'string',
-            'integer'                     => 'int',
-            'json'                        => 'array',
-            'jsonb'                       => 'array',
-            'smallint'                    => 'int',
-            'time with time zone'         => 'string',
-            'time without time zone'      => 'string',
-            'timestamp with time zone'    => 'string',
-            'timestamp without time zone' => 'string',
-        ];
-    }
-
     private function generatePrimaryPropertyPart(array $primary): string
     {
         if (count($primary) === 1) {
-            return sprintf('protected $primaryKey = \'%s\';', $primary[0]->column_name);
+            return sprintf('protected $primaryKey = \'%s\';', $primary[0]->getColumnName());
         }
         return 'protected $primaryKey = \'\'; // Unknown key';
     }
@@ -301,7 +283,7 @@ class ModelGenerateCommand extends GeneratorCommand
     }
 
     /**
-     * @param array $primary
+     * @param PrimaryInterface[] $primary
      * @param ColumnInterface[] $columns
      *
      * @return string
@@ -312,7 +294,7 @@ class ModelGenerateCommand extends GeneratorCommand
             $key = array_filter(
                 $columns,
                 static function ($column) use ($primary) {
-                    return $column->getName() === $primary[0]->column_name;
+                    return $column->getName() === $primary[0]->getColumnName();
                 }
             );
             if (1 === count($key)) {
@@ -326,7 +308,7 @@ class ModelGenerateCommand extends GeneratorCommand
     }
 
     /**
-     * @param array $primary
+     * @param PrimaryInterface[] $primary
      * @param ColumnInterface[] $columns
      *
      * @return string
@@ -337,12 +319,12 @@ class ModelGenerateCommand extends GeneratorCommand
             $key = array_filter(
                 $columns,
                 static function ($column) use ($primary) {
-                    return $column->getName() === $primary[0]->column_name;
+                    return $column->getName() === $primary[0]->getColumnName();
                 }
             );
 
             if (1 === count($key)) {
-                $type = $this->normalizeType($key[0]->getType());
+                $type = $key[0]->getPHPType();
                 if (in_array($type, ['string'], true)) {
                     return 'protected $keyType = \'' . $type . '\';';
                 }

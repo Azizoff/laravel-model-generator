@@ -11,4 +11,6 @@ interface ColumnInterface
     public function getName();
 
     public function getDefaultValue();
+
+    public function getPHPType(): string;
 }

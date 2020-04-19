@@ -4,6 +4,7 @@ namespace Azizoff\ModelGenerator\DataProvider\Postgres;
 
 use Azizoff\ModelGenerator\DataProvider\ColumnInterface;
 use Azizoff\ModelGenerator\DataProvider\DataProviderInterface;
+use Azizoff\ModelGenerator\DataProvider\PrimaryInterface;
 use Illuminate\Database\Connection;
 
 class DataProvider implements DataProviderInterface
@@ -21,7 +22,7 @@ class DataProvider implements DataProviderInterface
     /**
      * @param string $table
      *
-     * @return array|ColumnInterface[]
+     * @return ColumnInterface[]
      */
     public function getColumns(string $table): array
     {
@@ -51,7 +52,12 @@ SQL;
         );
     }
 
-    public function getPrimary(string $table)
+    /**
+     * @param string $table
+     *
+     * @return PrimaryInterface[]
+     */
+    public function getPrimary(string $table): array
     {
         $query = <<<'SQL'
 SELECT
@@ -66,6 +72,11 @@ WHERE
       tco.table_name = :table_name
   AND tco.constraint_type = 'PRIMARY KEY'
 SQL;
-        return $this->connection->select($query, ['table_name' => $table]);
+        return array_map(
+            static function ($key) {
+                return new Primary($key);
+            },
+            $this->connection->select($query, ['table_name' => $table])
+        );
     }
 }

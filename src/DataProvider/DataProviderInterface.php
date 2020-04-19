@@ -11,5 +11,10 @@ interface DataProviderInterface
      */
     public function getColumns(string $table): array;
 
-    public function getPrimary(string $table);
+    /**
+     * @param string $table
+     *
+     * @return PrimaryInterface[]
+     */
+    public function getPrimary(string $table): array;
 }
