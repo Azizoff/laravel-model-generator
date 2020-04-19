@@ -8,15 +8,14 @@
         }
     ],
     "require": {
-        "illuminate/database": "^6.0",
-        "illuminate/console": "^6.0"
+        "php": ">= 7.0",
+        "illuminate/database": ">= 5.0 < 7.0",
+        "illuminate/console": ">= 5.0 < 7.0"
     },
     "description": "Laravel database based Laravel model generator",
     "autoload": {
         "psr-4": {
             "Azizoff\\ModelGenerator\\": "src/"
         }
-
-    },
-    "minimum-stability": "dev"
+    }
 }

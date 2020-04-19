@@ -28,13 +28,13 @@ class ModelGenerateCommand extends GeneratorCommand
     /**
      * @inheritDoc
      */
-    protected function getStub()
+    protected function getStub(): string
     {
         return __DIR__ . '/stubs/model.stub';
     }
 
 
-    private function replaceProperties($stub)
+    private function replaceProperties($stub): string
     {
         $stub = str_replace(
             [
@@ -72,8 +72,7 @@ class ModelGenerateCommand extends GeneratorCommand
 
         if (null === $columns) {
             $query = <<<'SQL'
-SELECT
-       ordinal_position,
+SELECT ordinal_position,
        column_name,
        is_nullable,
        data_type,
@@ -97,14 +96,14 @@ SQL;
         static $primary;
         if (null === $primary) {
             $query = <<<'SQL'
-select kcu.column_name
-from information_schema.table_constraints tco
-         join information_schema.key_column_usage kcu
-              on kcu.constraint_name = tco.constraint_name
-                  and kcu.constraint_schema = tco.constraint_schema
-                  and kcu.constraint_name = tco.constraint_name
-where tco.table_name = :table_name
-  and tco.constraint_type = 'PRIMARY KEY'
+SELECT kcu.column_name
+FROM information_schema.table_constraints tco
+         INNER JOIN information_schema.key_column_usage kcu
+                    ON kcu.constraint_name = tco.constraint_name
+                        AND kcu.constraint_schema = tco.constraint_schema
+                        AND kcu.constraint_name = tco.constraint_name
+WHERE tco.table_name = :table_name
+  AND tco.constraint_type = 'PRIMARY KEY'
 SQL;
             $primary = DB::select($query, ['table_name' => $this->getTable()]);
         }
@@ -116,7 +115,7 @@ SQL;
         return $this->cleanEmptyLines($this->replaceProperties(parent::buildClass($name)));
     }
 
-    private function generatePropertyDocBlock(array $columns)
+    private function generatePropertyDocBlock(array $columns): string
     {
         return
             '/**'
@@ -181,7 +180,7 @@ SQL;
         return sprintf('protected $table = \'%s\';', $table);
     }
 
-    private function generateNoTimestampsPropertyPart(array $columns)
+    private function generateNoTimestampsPropertyPart(array $columns): string
     {
         $names = array_map(
             static function ($item) {
@@ -227,7 +226,7 @@ SQL;
         return $this->isSoftDeletes($columns) ? 'use SoftDeletes;' : '';
     }
 
-    private function generateCastsPropertyPart(array $columns)
+    private function generateCastsPropertyPart(array $columns): string
     {
         $toArrayCasts = array_filter(
             $columns,
@@ -268,7 +267,7 @@ SQL;
         return '';
     }
 
-    private function generatePrimaryKeyTypeAttributePart(array $primary, array $columns)
+    private function generatePrimaryKeyTypeAttributePart(array $primary, array $columns): string
     {
         if (1 === count($primary)) {
             $key = array_filter(
@@ -287,12 +286,12 @@ SQL;
         return '';
     }
 
-    private function cleanEmptyLines(string $stub)
+    private function cleanEmptyLines(string $stub): string
     {
-        return preg_replace('#^\n\n#m', PHP_EOL, preg_replace('#^    \n#m', '', $stub));
+        return preg_replace('#^\n\n#m', PHP_EOL, preg_replace('#^ {4}\n#m', '', $stub));
     }
 
-    protected function getNameInput()
+    protected function getNameInput(): string
     {
         if ($this->hasOption('model') && !empty($this->option('model'))) {
             return $this->option('model');
@@ -300,14 +299,14 @@ SQL;
         return Str::ucfirst(Str::camel($this->getTable()));
     }
 
-    protected function getArguments()
+    protected function getArguments(): array
     {
         return [
             ['table', InputArgument::REQUIRED, 'The name of the table'],
         ];
     }
 
-    protected function getOptions()
+    protected function getOptions(): array
     {
         return [
             ['force', null, InputOption::VALUE_NONE, 'Create the class even if the model already exists'],
