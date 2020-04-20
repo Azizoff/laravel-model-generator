@@ -309,7 +309,14 @@ class ModelGenerateCommand extends GeneratorCommand
         if ($this->hasOption('model') && !empty($this->option('model'))) {
             return $this->option('model');
         }
-        return Str::ucfirst(Str::camel($this->getTableName()));
+
+        $className = Str::ucfirst(Str::camel($this->getTableName()));
+
+        if ($this->hasOption('namespace') && !empty($this->option('namespace'))) {
+            return trim($this->option('namespace'), '\\') . '\\' . $className;
+        }
+
+        return $className;
     }
 
     protected function getDefaultNamespace($rootNamespace)
@@ -329,6 +336,7 @@ class ModelGenerateCommand extends GeneratorCommand
         return [
             ['force', null, InputOption::VALUE_NONE, 'Create the class even if the model already exists'],
             ['model', null, InputOption::VALUE_REQUIRED, 'Model class name'],
+            ['namespace', null, InputOption::VALUE_REQUIRED, 'Namespace'],
         ];
     }
 }
