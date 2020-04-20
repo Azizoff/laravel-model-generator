@@ -175,7 +175,7 @@ class ModelGenerateCommand extends GeneratorCommand
             $table->getColumns()
         );
         $date_columns = array_intersect(['created_at', 'updated_at'], $names);
-        return (count($date_columns) !== 2) ? 'protected $timestamps = false;' : '';
+        return (count($date_columns) !== 2) ? 'public $timestamps = false;' : '';
     }
 
     /**
