@@ -56,6 +56,6 @@ class Column implements ColumnInterface
 
     public function isIncremental(): bool
     {
-        return mb_stripos($this->getDefaultValue(), 'nextval') === false;
+        return mb_stripos($this->getDefaultValue(), 'nextval') !== false;
     }
 }
