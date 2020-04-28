@@ -19,7 +19,7 @@ if ($this->app->environment() === 'local'
 ## Config
 You can also publish the config file
 ```bash
-php artisan vendor:publish --provider="Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider" --tag=config
+php artisan vendor:publish --provider="Azizoff\\ModelGenerator\\ModelGeneratorProvider" --tag=config
 ```
 
 ## Command
@@ -30,5 +30,4 @@ php artisan model:generate <tablename>
 ```bash
 php artisan model:generate <tablename> --model=\\Http\\Models\\CustomModelName
 ```
-
 
