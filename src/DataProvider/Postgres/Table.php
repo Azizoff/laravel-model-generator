@@ -31,10 +31,11 @@ class Table implements TableInterface
         static $columns;
         if (null === $columns) {
             $columnsData = $this->loadColumns();
+            $constraintsData = $this->loadConstraints();
 
             $columns = array_map(
-                static function ($column) {
-                    return new Column($column);
+                static function ($column) use ($constraintsData) {
+                    return new Column($column, $constraintsData);
                 },
                 $columnsData
             );
@@ -108,14 +109,40 @@ SELECT
     numeric_precision,
     numeric_precision_radix,
     numeric_scale,
-    column_default
+    column_default,
+    table_schema
 FROM
     information_schema.columns
 WHERE
     table_name = :table_name
 ORDER BY ordinal_position
 SQL;
+
         return $this->connection->select($query, ['table_name' => $this->tableName]);
+    }
+
+    /**
+     * @return ColumnsConstraints
+     */
+    private function loadConstraints(): ColumnsConstraints
+    {
+        $query = <<<'SQL'
+SELECT pgc.conname AS constraint_name,
+       ccu.table_schema AS table_schema,
+       ccu.column_name,
+       pgc.consrc AS definition
+FROM pg_constraint pgc
+JOIN pg_namespace nsp ON nsp.oid = pgc.connamespace
+JOIN pg_class  cls ON pgc.conrelid = cls.oid
+LEFT JOIN information_schema.constraint_column_usage ccu
+          ON pgc.conname = ccu.constraint_name
+          AND nsp.nspname = ccu.constraint_schema
+WHERE contype ='c'
+AND table_name = :table_name
+ORDER BY pgc.conname;
+SQL;
+
+        return new ColumnsConstraints($this->connection->select($query, ['table_name' => $this->tableName]));
     }
 
     public function getName(): string

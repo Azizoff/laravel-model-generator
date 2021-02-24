@@ -3,14 +3,20 @@
 namespace Azizoff\ModelGenerator\DataProvider\Postgres;
 
 use Azizoff\ModelGenerator\DataProvider\ColumnInterface;
+use Azizoff\ModelGenerator\DataProvider\ConstantAwareInterface;
 
-class Column implements ColumnInterface
+class Column implements ColumnInterface, ConstantAwareInterface
 {
     private $object;
+    /**
+     * @var ColumnsConstraints
+     */
+    private $constraints;
 
-    public function __construct($object)
+    public function __construct($object, ColumnsConstraints $constraints)
     {
         $this->object = $object;
+        $this->constraints = $constraints;
     }
 
     public function getType()
@@ -57,5 +63,25 @@ class Column implements ColumnInterface
     public function isIncremental(): bool
     {
         return mb_stripos($this->getDefaultValue(), 'nextval') !== false;
+    }
+
+    public function getSchema(): bool
+    {
+        return $this->object->table_schema;
+    }
+
+    public function getConstants(): array
+    {
+        $result = [];
+        $constraints = $this->constraints->getConstraints($this);
+
+        foreach ($constraints as $constraint) {
+            $values = $constraint->getValues();
+            foreach ($values as $value) {
+                $result[] = $value;
+            }
+        }
+
+        return $result;
     }
 }

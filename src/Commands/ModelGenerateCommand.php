@@ -3,6 +3,7 @@
 namespace Azizoff\ModelGenerator\Commands;
 
 use Azizoff\ModelGenerator\DataProvider\ColumnInterface;
+use Azizoff\ModelGenerator\DataProvider\ConstantAwareInterface;
 use Azizoff\ModelGenerator\DataProvider\DataProviderFactory;
 use Azizoff\ModelGenerator\DataProvider\DataProviderInterface;
 use Azizoff\ModelGenerator\DataProvider\TableInterface;
@@ -88,6 +89,7 @@ class ModelGenerateCommand extends GeneratorCommand
                 'CastsPropertyPart',
                 'IncrementingKeyPart',
                 'PrimaryKeyTypePart',
+                'ConstantsPart',
             ],
             [
                 $this->generatePropertyDocBlock($table),
@@ -99,6 +101,7 @@ class ModelGenerateCommand extends GeneratorCommand
                 $this->generateCastsPropertyPart($table),
                 $this->generateNoIncrementingKeyPropertyPart($table),
                 $this->generatePrimaryKeyTypeAttributePart($table),
+                $this->generateConstantsPart($table),
 
             ],
             $stub
@@ -153,6 +156,7 @@ class ModelGenerateCommand extends GeneratorCommand
         if (count($table->getPrimary()) === 1) {
             return sprintf('protected $primaryKey = \'%s\';', $table->getPrimary()[0]->getName());
         }
+
         return 'protected $primaryKey = \'\'; // Unknown key';
     }
 
@@ -175,6 +179,7 @@ class ModelGenerateCommand extends GeneratorCommand
             $table->getColumns()
         );
         $date_columns = array_intersect(['created_at', 'updated_at'], $names);
+
         return (count($date_columns) !== 2) ? 'public $timestamps = false;' : '';
     }
 
@@ -200,6 +205,7 @@ class ModelGenerateCommand extends GeneratorCommand
             $columns
         );
         $date_columns = array_intersect(['deleted_at'], $names);
+
         return 1 === count($date_columns);
     }
 
@@ -338,5 +344,29 @@ class ModelGenerateCommand extends GeneratorCommand
             ['model', null, InputOption::VALUE_REQUIRED, 'Model class name'],
             ['namespace', null, InputOption::VALUE_REQUIRED, 'Namespace'],
         ];
+    }
+
+    private function generateConstantsPart(TableInterface $table): string
+    {
+        $values = array_map(
+            static function (ColumnInterface $column) {
+                if ($column instanceof ConstantAwareInterface) {
+                    return
+                        [
+                            'name'      => $column->getName(),
+                            'constants' => $column->getConstants(),
+                        ];
+                }
+
+                return [];
+            },
+            $table->getColumns()
+        );
+
+        if (count($values) > 0) {
+            return serialize($values);
+        }
+
+        return '';
     }
 }

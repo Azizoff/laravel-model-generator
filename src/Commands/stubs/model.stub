@@ -9,6 +9,8 @@ class DummyClass extends Model
 {
     SoftDeletesTraitPart
 
+    ConstantsPart
+
     TableNamePropertyPart
     PrimaryPropertyPart
     NoTimestampsPropertyPart
