@@ -8,8 +8,7 @@ PropertiesDocBlockPart
 class DummyClass extends Model
 {
     SoftDeletesTraitPart
-
-    ConstantsPart
+ConstantsPart
 
     TableNamePropertyPart
     PrimaryPropertyPart

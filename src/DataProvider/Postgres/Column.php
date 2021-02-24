@@ -65,7 +65,7 @@ class Column implements ColumnInterface, ConstantAwareInterface
         return mb_stripos($this->getDefaultValue(), 'nextval') !== false;
     }
 
-    public function getSchema(): bool
+    public function getSchema(): string
     {
         return $this->object->table_schema;
     }
@@ -77,8 +77,12 @@ class Column implements ColumnInterface, ConstantAwareInterface
 
         foreach ($constraints as $constraint) {
             $values = $constraint->getValues();
+
             foreach ($values as $value) {
-                $result[] = $value;
+                $result[] = [
+                    'name'  => mb_strtoupper($this->getName() . '_' . str_replace(['-'], ['_'], $value)),
+                    'value' => $value,
+                ];
             }
         }
 

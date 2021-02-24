@@ -363,10 +363,18 @@ class ModelGenerateCommand extends GeneratorCommand
             $table->getColumns()
         );
 
+        $parts = [];
         if (count($values) > 0) {
-            return serialize($values);
+            foreach ($values as $value) {
+                if (count($value['constants']) > 0) {
+                    $parts[] = str_repeat(' ', 4) . '// ' . $value['name'];
+                    foreach ($value['constants'] as $constant) {
+                        $parts[] = sprintf(str_repeat(' ', 4) . "const %s = '%s';", $constant['name'], $constant['value']);
+                    }
+                }
+            }
         }
 
-        return '';
+        return implode(PHP_EOL, $parts);
     }
 }
