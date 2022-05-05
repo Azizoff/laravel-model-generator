@@ -43,6 +43,8 @@ class Column implements ColumnInterface, ConstantAwareInterface
     {
         static $map = [
             'bigint'                      => 'int',
+            'real'                        => 'float',
+            'double precision'            => 'float',
             'boolean'                     => 'bool',
             'character varying'           => 'string',
             'integer'                     => 'int',
